@@ -13,7 +13,7 @@
 {
     self = [super init];
     if (self) {
-        self.failType = 0;
+        self.failType = HttpResponseTypeRequestSuccess;
     }
     return self;
 }

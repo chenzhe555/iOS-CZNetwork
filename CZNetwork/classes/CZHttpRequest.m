@@ -12,6 +12,11 @@
 
 @implementation CZHttpRequest
 
++(instancetype)request
+{
+    return [[[self class] alloc] init];
+}
+
 - (instancetype)init
 {
     self = [super init];
@@ -34,11 +39,11 @@
     // 生成请求参数
     [self joinRequestParams];
     
-    // 对参数进行加密
-    [self encryptRequestParams];
-    
     // 处理属性值对应的操作
     [self handleProperties:manager];
+    
+    // 业务处理
+    [self handleBeforeRequest];
     
     // 获取网络请求Task
     self.task = [self generateHttpTask:manager];
@@ -48,6 +53,12 @@
 {
     if (!self.requestParams) self.requestParams = [NSMutableDictionary dictionary];
     if (!self.commonParams) [self.requestParams addEntriesFromDictionary:self.commonParams];
+}
+
+-(void)handleBeforeRequest
+{
+    // 对参数进行加密
+    [self encryptRequestParams];
 }
 
 -(void)encryptRequestParams
@@ -182,30 +193,30 @@
     CZHttpResponse * httpResponse = [[CZHttpResponse alloc] init];
     httpResponse.identifierID = task.taskIdentifier;
     httpResponse.requestUrl = task.currentRequest.URL.absoluteString;
-    httpResponse.failType = 1;
+    httpResponse.failType = HttpResponseTypeRequestFail;
     if (task.response) {
         // 处理网络请求状态码，后续完善状态码对应信息
         NSHTTPURLResponse * response = (NSHTTPURLResponse *)task.response;
         NSInteger statusCode = response.statusCode;
         if (statusCode == 404) {
             httpResponse.error = [NSError errorWithDomain:error.domain code:statusCode userInfo:@{
-                                                                                         @"text": [NSString stringWithFormat:@"请求地址不存在: %@", httpResponse.requestUrl]
-                                                                                         }];
+                                                                                                    @"text": [NSString stringWithFormat:@"请求地址不存在: %@", httpResponse.requestUrl]
+                                                                                                  }];
         } else {
             httpResponse.error = [NSError errorWithDomain:error.domain code:statusCode userInfo:@{
-                                                                                                        @"text": error.userInfo[@"NSLocalizedDescription"]
-                                                                                                        }];
+                                                                                                    @"text": error.userInfo[@"NSLocalizedDescription"]
+                                                                                                  }];
         }
     } else {
         httpResponse.error = [NSError errorWithDomain:error.domain code:error.code userInfo:@{
-                                                                                                    @"text": error.userInfo[@"NSLocalizedDescription"]
-                                                                                                    }];
+                                                                                               @"text": error.userInfo[@"NSLocalizedDescription"]
+                                                                                             }];
     }
     
-    // 目前只处理请求正常返回/取消请求的情况
     [self handleHttpRequestBeforeWithResponseObject:httpResponse];
+    // 目前只处理请求正常返回/取消请求的情况
     if (error.code == -999) {
-        httpResponse.failType = 2;
+        httpResponse.failType = HttpResponseTypeRequestFailWithCancel;
         [self handleHttpRequestCancel:task error:error responseObject:httpResponse];
     } else {
         [self handleHttpRequestFail:task error:error responseObject:httpResponse];

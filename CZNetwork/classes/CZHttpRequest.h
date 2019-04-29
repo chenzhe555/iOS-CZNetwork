@@ -68,6 +68,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, assign) NSInteger alertType;
 
+
+/**
+ @brief 获取当前实例
+ */
++(instancetype)request;
+
 /**
  @brief 启动网络请求
  @discussion 根据项目实际情形拼接 start流程
@@ -77,14 +83,9 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark 网络请求前相关处理
 
 /**
- @brief 对请求参数进行加密
+ @brief 网络请求之前要做的事
  */
--(void)encryptRequestParams;
-
-/**
- @brief 生成网络任务
- */
--(NSURLSessionDataTask *)generateHttpTask;
+-(void)handleBeforeRequest;
 
 /**
  @brief 在网络回调之前的处理。可对同一请求多处调用做预处理操作等等
